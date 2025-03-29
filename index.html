@@ -23,15 +23,16 @@
             align-items: center;
             height: 100vh;
         }
-        @media screen and (max-width: 768px) and (orientation: landscape) {
+        @media screen and (max-width: 1024px) and (orientation: landscape) {
             body {
-        background-size: contain; /* Ensures full visibility */
-        background-position: center;
-        height: 100vw; /* Adjust height for landscape */
+                background-size: contain; /* Ensures full visibility */
+                background-position: center;
+                background-repeat: no-repeat;
+                height: 100vw; /* Adjust height for landscape */
             }
             .container {
-        width: 90%; /* Reduce width for smaller screens */
-        padding: 15px;
+                width: 90%; /* Reduce width for smaller screens */
+                padding: 15px;
             }
             .chart-container {
         height: 300px; /* Adjust chart height for mobile landscape */
