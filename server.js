@@ -3,8 +3,8 @@ const { WebSocketServer } = require("ws");
 const cors = require("cors");
 
 const app = express();
-const PORT = 3000;
-const wss = new WebSocketServer({ port: 8080 });
+const PORT = process.env.PORT || 3000; // Use Render’s dynamic port
+const WS_PORT = process.env.WS_PORT || 8080; // WebSocket Port (if needed)
 
 let votes = { "1984": 0, "Brave New World": 0 };
 let pollClosed = false;
@@ -12,6 +12,13 @@ let winner = null;
 
 app.use(cors());
 app.use(express.json());
+
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+// WebSocket Server should share the same HTTP server
+const wss = new WebSocketServer({ server });
 
 wss.on("connection", (ws) => {
     ws.send(JSON.stringify({ votes, pollClosed, winner }));
@@ -33,5 +40,3 @@ wss.on("connection", (ws) => {
 function broadcast(data) {
     wss.clients.forEach(client => client.send(data));
 }
-
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
