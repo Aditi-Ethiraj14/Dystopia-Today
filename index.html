@@ -133,7 +133,7 @@
     <button class="stop-button">✶</button> <!-- Disabled Button, Only Stops via Click in Code -->
 
     <script>
-        const socket = new WebSocket("ws://localhost:8080");
+        const socket = new WebSocket("wss://dystopia-today.onrender.com");
         let voteData = { "1984": 0, "Brave New World": 0 };
         let pollClosed = false;
         let winner = null;
