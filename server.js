@@ -4,7 +4,6 @@ const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Use Render’s dynamic port
-const WS_PORT = process.env.WS_PORT || 8080; // WebSocket Port (if needed)
 
 let votes = { "1984": 0, "Brave New World": 0 };
 let pollClosed = false;
@@ -12,6 +11,11 @@ let winner = null;
 
 app.use(cors());
 app.use(express.json());
+
+// ✅ Add this to handle requests to the root URL
+app.get("/", (req, res) => {
+  res.send("Server is running on Render!");
+});
 
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
