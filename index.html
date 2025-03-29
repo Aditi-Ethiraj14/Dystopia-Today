@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ministry of Truth Poll</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti"></script>
+    <style>
+        /* Full-Screen Background Image */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: url('Dystopia.jpg.jpg'); /* Your uploaded background */
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Poll Container - Cyberpunk Glowing UI */
+        .container {
+            width: 600px;
+            background: rgba(0, 0, 0, 0.8); /* Slightly more translucent */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px red;
+            backdrop-filter: blur(8px);
+        }
+
+        h1 {
+            color: cyan;
+            text-shadow: 0 0 10px cyan;
+        }
+
+        /* Buttons */
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+            transition: 0.3s;
+        }
+        .vote-1984 { background: red; }
+        .vote-brave { background: blue; }
+        .vote-1984:hover { background: darkred; }
+        .vote-brave:hover { background: darkblue; }
+
+        /* Chart Container */
+        .chart-container {
+            width: 96.5%;
+            height: 400px;
+            padding: 10px;
+            margin-top: 20px;
+            background: rgba(20, 20, 20, 0.85); /* Adjusted for better contrast */
+            border-radius: 10px;
+            box-shadow: 0 0 10px red;
+            display: flex;
+            justify-content: center; /* Centers content inside */
+            align-items: center; /* Centers content vertically */
+        }
+
+        /* Stop Button */
+        .stop-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            background: black;
+            color: red;
+            border: 2px solid red;
+            padding: 10px;
+            border-radius: 50%;
+            transition: 0.3s;
+            user-select: none;
+            pointer-events: none; /* Prevents clicking */
+        }
+
+        /* Glitch Effect */
+        @keyframes glitch {
+            0% { transform: skewX(0deg); }
+            25% { transform: skewX(-10deg); }
+            50% { transform: skewX(10deg); }
+            75% { transform: skewX(-5deg); }
+            100% { transform: skewX(0deg); }
+        }
+        .glitch { animation: glitch 0.5s infinite; }
+
+        /* Poll Closed Message */
+        .poll-closed {
+            font-size: 24px;
+            color: red;
+            font-weight: bold;
+            text-shadow: 0 0 10px red;
+        }
+
+        /* Winner Reveal */
+        .winner-text {
+            font-size: 30px;
+            font-weight: bold;
+            color: cyan;
+            opacity: 0;
+            animation: fadeIn 2s forwards;
+            text-shadow: 0 0 10px cyan;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="pollContainer">
+        <h1>Ministry of Truth Voting</h1>
+        <button class="vote-1984" onclick="vote('1984')">Vote 1984</button>
+        <button class="vote-brave" onclick="vote('Brave New World')">Vote Brave New World</button>
+        <div class="chart-container">
+            <canvas id="chartCanvas"></canvas>
+        </div>
+    </div>
+
+    <button class="stop-button">✶</button> <!-- Disabled Button, Only Stops via Click in Code -->
+
+    <script>
+        const socket = new WebSocket("ws://localhost:8080");
+        let voteData = { "1984": 0, "Brave New World": 0 };
+        let pollClosed = false;
+        let winner = null;
+        let chart;
+
+        function vote(choice) {
+            if (!pollClosed) {
+                socket.send(JSON.stringify({ type: "vote", vote: choice }));
+            }
+        }
+
+        function renderChart() {
+            if (chart) chart.destroy();
+            const ctx = document.getElementById("chartCanvas").getContext("2d");
+            chart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: ["1984", "Brave New World"],
+                    datasets: [{
+                        data: [voteData["1984"], voteData["Brave New World"]],
+                        backgroundColor: ["red", "blue"]
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                    }
+                }
+            });
+        }
+
+        function stopVoting() {
+            document.body.classList.add("glitch");
+            setTimeout(() => {
+                document.body.classList.remove("glitch");
+                socket.send(JSON.stringify({ type: "stopPoll" }));
+            }, 1000);
+        }
+
+        function announceWinner() {
+            document.getElementById("pollContainer").innerHTML = `
+                <h1 class="winner-text">THE MINISTRY HAS SPOKEN...</h1>
+                <p class="winner-text">The real winner is: ${winner}</p>
+            `;
+            
+            confetti({
+                particleCount: 200,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            voteData = data.votes;
+            pollClosed = data.pollClosed;
+            winner = data.winner;
+
+            if (pollClosed) {
+                announceWinner();
+            } else {
+                renderChart();
+            }
+        };
+
+        window.onload = () => {
+            if (pollClosed) {
+                document.getElementById("pollContainer").innerHTML = `<h1 class="poll-closed">POLL CLOSED</h1>`;
+            }
+        };
+
+        // Simulate Stop Button Trigger
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "$") {
+                stopVoting();
+            }
+        });
+    </script>
+
+</body>
+</html>
+
