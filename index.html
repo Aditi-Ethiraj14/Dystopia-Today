@@ -153,10 +153,26 @@
         let winner = null;
         let chart;
 
+        function disableVoteButtons() {
+            document.querySelectorAll("button.vote-1984, button.vote-brave").forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = "0.5";
+                btn.style.cursor = "not-allowed";
+            });
+        }
+
         function vote(choice) {
-            if (!pollClosed) {
-                socket.send(JSON.stringify({ type: "vote", vote: choice }));
+            if (pollClosed) return;
+
+            if (localStorage.getItem("hasVoted")) {
+                alert("You have already voted. Only one vote per device is allowed.");
+                return;
             }
+
+            socket.send(JSON.stringify({ type: "vote", vote: choice }));
+            localStorage.setItem("hasVoted", "true");
+            disableVoteButtons();
+            alert("Thank you for voting!");
         }
 
         function renderChart() {
@@ -220,6 +236,10 @@
             if (pollClosed) {
                 document.getElementById("pollContainer").innerHTML = `<h1 class="poll-closed">POLL CLOSED</h1>`;
             }
+
+            if (localStorage.getItem("hasVoted")) {
+                disableVoteButtons();
+            }
         };
 
         // Simulate Stop Button Trigger
@@ -232,4 +252,3 @@
 
 </body>
 </html>
-
